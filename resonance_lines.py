@@ -1,9 +1,22 @@
 import numpy as np
 import pylab as plt
-plt.style.use('classic')
+#plt.style.use('classic')
 import matplotlib
-matplotlib.rcParams['mathtext.fontset'] = 'dejavusans'
-matplotlib.rcParams['mathtext.rm'] = 'sans'
+matplotlib.rcParams['mathtext.fontset'] = 'dejavuserif' #'dejavusans'
+matplotlib.rcParams['mathtext.rm'] = 'dejavuserif' #'sans'
+
+# Define plot parameters 
+SMALL_SIZE = 20
+MEDIUM_SIZE = 22
+BIGGER_SIZE = 25
+plt.rcParams["font.family"] = "serif"
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=BIGGER_SIZE)    # fontsize of the axes title
+plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=MEDIUM_SIZE)   # fontsize of the tick labels
+plt.rc('ytick', labelsize=MEDIUM_SIZE)   # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)   # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 class resonance_lines(object):
 	
