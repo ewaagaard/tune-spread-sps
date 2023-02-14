@@ -6,8 +6,6 @@ import resonance_lines
 import input_parameters
 import matplotlib
 
-import acc_lib
-
 import xobjects as xo
 import xtrack as xt
 import json

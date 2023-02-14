@@ -1,0 +1,14 @@
+What happens? 
+1: Initial large tune spread   
+2: Qy trim – εy blow-up due to resonances
+3: Larger εy – smaller tune footprint
+4: Qy reset – more overlap with resonances
+5: εx blow-up – even smaller tune footprint
+
+
+Parameter values
+1: (ex, ey) = (1.3e-6, 0.9e-6), (Qx, Qy) = (26.30, 26.25)
+2: (ex, ey) = (1.3e-6, 0.9e-6), (Qx, Qy) = (26.30, 26.10)
+3: (ex, ey) = (2.5e-6, 0.9e-6), (Qx, Qy) = (26.30, 26.10)
+4: (ex, ey) = (2.5e-6, 0.9e-6), (Qx, Qy) = (26.30, 26.25)
+5: (ex, ey) = (2.5e-6, 1.35e-6), (Qx, Qy) = (26.30, 26.25)
