@@ -24,11 +24,7 @@ with open(fname_line, 'r') as fid:
      input_data = json.load(fid)
 line = xt.Line.from_dict(input_data)
 particle_ref = line.particle_ref
-
-#%% Build tracker and perform Twiss on optics
-tracker = xt.Tracker(_context=context,
-                    line=line)
-twiss_xtrack = tracker.twiss()  # optics adapted for sequence w/o SC
+twiss_xtrack = line.twiss()
 
 # ----------- Initiate PySCRDT object -----------------
 s = PySCRDT()
