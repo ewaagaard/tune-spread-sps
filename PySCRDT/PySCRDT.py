@@ -251,22 +251,25 @@ class PySCRDT(object):
         if self.n%2!=0:
             raise IOError('# PySCRDT::potential: Space charge potential contains only even orders (order given {}), change the order in [setOrder]'.format(str(self.n)))
         if (self.m+self.n < 21) and (feedDown==False) and (lookUp==True):
-            try:
-                with open(__file__[:__file__.find('PySCRDT.py')]+'potentialsPy3','rb') as f:                                    
-                    a=dill.load(f)
-                a=np.array(a)
-                a=a[np.where(a[:,0]==self.m)[0]]
-                self.f=a[np.where(a[:,1]==self.n)][0][2]
-            except:
+            if (self.m==32 and self.n==8) or (self.m==8 and self.n==32):
+                pass
+            else:
                 try:
-                    with open(__file__[:__file__.find('PySCRDT.py')]+'potentialsPy2','rb') as f:                                    
+                    with open(__file__[:__file__.find('PySCRDT.py')]+'potentialsPy3','rb') as f:                                    
                         a=dill.load(f)
                     a=np.array(a)
                     a=a[np.where(a[:,0]==self.m)[0]]
                     self.f=a[np.where(a[:,1]==self.n)][0][2]
                 except:
-                    lookUp=False     
-                    print('# PySCRDT::potential: Calculating potential')  
+                    try:
+                        with open(__file__[:__file__.find('PySCRDT.py')]+'potentialsPy2','rb') as f:                                    
+                            a=dill.load(f)
+                        a=np.array(a)
+                        a=a[np.where(a[:,0]==self.m)[0]]
+                        self.f=a[np.where(a[:,1]==self.n)][0][2]
+                    except:
+                        lookUp=False     
+                        print('# PySCRDT::potential: Calculating potential')  
         if (self.m+self.n > 21) or (feedDown==True) or (lookUp==False):
             V = (-1+sy.exp(-self.x**2/(self.t+2*self.a**2)-self.y**2/(self.t+2*self.b**2)))/sy.sqrt((self.t+2*self.a**2)*(self.t+2*self.b**2))
             if self.m>self.n:
@@ -332,7 +335,7 @@ class PySCRDT(object):
         
     # - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - *
 
-    def prepareData(self,twissFile, skip_header_nr=45, skip_rows_nr=47): 
+    def prepareData(self,twissFile): 
         """
         Prepares the data from a MADX Twiss file including at least {s, betx, bety, dx, dy, mux, muy, l}
         Inputs : twissFile : [str] twiss file (default=None)
@@ -342,6 +345,13 @@ class PySCRDT(object):
             raise IOError('# PySCRDT::prepareData: You need to define Madx twiss file in [prepareData]')
         if self.parameters is None:
             raise IOError('# PySCRDT::prepareData: You need to define parameters in [setParameters]')
+        with open(twissFile, 'r') as f:
+            for line in enumerate(f.readlines()):
+                if line[1][0]=='*':
+                    skip_header_nr = line[0]
+                elif line[1][0]=='$':
+                    skip_rows_nr = line[0]+1
+                    break
         params=np.genfromtxt(twissFile,max_rows=40,dtype=str)
         for i in enumerate(params):
             if params[i[0]][1]=='GAMMA':
@@ -356,14 +366,7 @@ class PySCRDT(object):
         header=np.genfromtxt(twissFile,skip_header=skip_header_nr,max_rows=1,dtype=str)   # 45 originally, below 47
         data=np.loadtxt(twissFile,skiprows=skip_rows_nr,usecols=(np.where(header=='S')[0][0]-1,np.where(header=='BETX')[0][0]-1,np.where(header=='BETY')[0][0]-1,np.where(header=='DX')[0][0]-1,np.where(header=='DY')[0][0]-1,np.where(header=='MUX')[0][0]-1,np.where(header=='MUY')[0][0]-1,np.where(header=='L')[0][0]-1))
         s = np.linspace(0,self.parameters['C'],100000)
-        try:
-            data=np.loadtxt(twissFile,skiprows=47,usecols=(np.where(header=='S')[0][0]-1,np.where(header=='BETX')[0][0]-1,np.where(header=='BETY')[0][0]-1,np.where(header=='DX')[0][0]-1,np.where(header=='DY')[0][0]-1,np.where(header=='MUX')[0][0]-1,np.where(header=='MUY')[0][0]-1,np.where(header=='L')[0][0]-1,np.where(header=='ALFX')[0][0]-1,np.where(header=='ALFY')[0][0]-1))
-            data2=np.zeros((100000,10))
-            data2[:,8] = np.interp(s,data[:,0],data[:,8])
-            data2[:,9] = np.interp(s,data[:,0],data[:,9])
-        except:
-            data=np.loadtxt(twissFile,skiprows=47,usecols=(np.where(header=='S')[0][0]-1,np.where(header=='BETX')[0][0]-1,np.where(header=='BETY')[0][0]-1,np.where(header=='DX')[0][0]-1,np.where(header=='DY')[0][0]-1,np.where(header=='MUX')[0][0]-1,np.where(header=='MUY')[0][0]-1,np.where(header=='L')[0][0]-1))
-            data2=np.zeros((100000,8))
+        data2=np.zeros((100000,8))
         data2[:,1] = np.square(np.interp(s,data[:,0],np.sqrt(data[:,1])))
         data2[:,2] = np.square(np.interp(s,data[:,0],np.sqrt(data[:,2])))
         data2[:,3] = np.interp(s,data[:,0],self.parameters['b']*data[:,3])
@@ -389,8 +392,6 @@ class PySCRDT(object):
             raise IOError('# PySCRDT::loadTwissFromXsuite: You need to define Xsuite twiss table in [loadTwissFromXsuite]')
         if self.parameters is None:
             raise IOError('# PySCRDT::loadTwissFromXsuite: You need to define parameters in [setParameters]')
-        if not isinstance(twissTableXsuite, dict):
-            raise IOError('Twiss table must be X-track dictionary')
             
         # Define parameters from Twiss table
         self.parameters['g'] = twissTableXsuite['particle_on_co'].gamma0[0]
@@ -424,10 +425,10 @@ class PySCRDT(object):
         """
         self.dictionary={}
         for i in factor.keys():
-            if len(i.args)==0:
-                self.dictionary[i]=factor[i]
-            else:
-                self.dictionary[sy.exp(i.args[0]/1.)]=factor[i]
+            #if len(i.args)==0:
+            self.dictionary[i]=factor[i]
+            #else:
+            #    self.dictionary[sy.exp(i.args[0]/1.)]=factor[i]
         return self.dictionary
     # - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - *
 
@@ -464,24 +465,24 @@ class PySCRDT(object):
                 det2=sy.expand(det3)
                 factor=sy.collect(det2,sy.exp(1j*self.fy),evaluate=False)
                 dictionary=self.reIndexing(factor)
-                self.factor=float(2.*dictionary[sy.exp(abs(self.n)*1j*self.fy)])
+                self.factor=float(2.*dictionary[sy.exp(1j*self.fy)**float(abs(self.n))])
             elif self.n==0:
                 det1=sy.cos(self.fx)**abs(self.m)
                 det3=det1.rewrite(sy.exp)
                 det2=sy.expand(det3)
                 factor=sy.collect(det2,sy.exp(1j*self.fx),evaluate=False)
                 dictionary=self.reIndexing(factor)
-                self.factor=float(2.*dictionary[sy.exp(abs(self.m)*1j*self.fx)])
+                self.factor=float(2.*dictionary[sy.exp(1j*self.fx)**float(abs(self.m))])
             else:
                 det1=(sy.cos(self.fx)**abs(self.m)*sy.cos(self.fy)**abs(self.n))
                 det3=det1.rewrite(sy.exp)
                 det2=sy.expand(det3)
                 factor1=sy.collect(det2,sy.exp(1j*self.fx),evaluate=False)
                 dictionary=self.reIndexing(factor1)
-                factor1=dictionary[sy.exp(abs(self.m)*1j*self.fx)]
+                factor1=dictionary[sy.exp(1j*self.fx)**float(abs(self.m))]
                 factor2=sy.collect(factor1,sy.exp(1j*self.fy),evaluate=False)
                 dictionary=self.reIndexing(factor2)
-                self.factor=float(2.*dictionary[sy.exp(abs(self.n)*1j*self.fy)])
+                self.factor=float(2.*dictionary[sy.exp(1j*self.fy)**float(abs(self.n))])
             return self.factor
     
     # - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - * - - *
@@ -672,4 +673,3 @@ class PySCRDT(object):
         Returns: [dict]
         """
         return {'Set & Update':['intensity', 'bunchLength', 'emittance_x', 'emittance_y', 'dpp_rms', 'dpp', 'ro'], 'Update only': ['b', 'g']}
-
